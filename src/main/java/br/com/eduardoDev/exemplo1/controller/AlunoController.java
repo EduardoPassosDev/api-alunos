@@ -1,6 +1,9 @@
 package br.com.eduardoDev.exemplo1.controller;
 
+import br.com.eduardoDev.exemplo1.dto.AlunoDTO;
 import br.com.eduardoDev.exemplo1.entidade.Aluno;
+import br.com.eduardoDev.exemplo1.entidade.Endereco;
+import br.com.eduardoDev.exemplo1.httpClient.CepHttpCliente;
 import br.com.eduardoDev.exemplo1.service.AlunoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,9 @@ public class AlunoController {
 
     @Autowired
     AlunoService alunoService;
+
+    @Autowired
+    CepHttpCliente cepHttpCliente;
 
     @GetMapping
     public List<Aluno> obterTodos() {
@@ -35,7 +41,13 @@ public class AlunoController {
 
 
     @PostMapping
-    public ResponseEntity<Aluno> inserir(@RequestBody @Valid  Aluno aluno) {
+    public ResponseEntity<Aluno> inserir(@RequestBody @Valid AlunoDTO alunoDTO) {
+        Aluno aluno = new Aluno(alunoDTO);
+
+        Endereco endereco = cepHttpCliente.obterEnderecoPeloCep(alunoDTO.getCep());
+
+        aluno.setEndereco(endereco);
+
         alunoService.inserir(aluno);
 
         return ResponseEntity.created(null).body(aluno);
@@ -49,10 +61,8 @@ public class AlunoController {
             return ResponseEntity.notFound().build();
         }
 
-        alunoService.atualizar(id, novosDadosAluno);
-
-
-        return ResponseEntity.ok().body(novosDadosAluno);
+       Aluno responseAluno = alunoService.atualizar(id, novosDadosAluno);
+        return ResponseEntity.ok().body(responseAluno);
     }
 
     @PatchMapping("/{id}")
